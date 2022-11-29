@@ -263,6 +263,13 @@ final class HttpSinkConfigTest {
                                 "oauth2.access.token.url", "http://localhost:42",
                                 "oauth2.client.id", "client_id",
                                 "oauth2.client.secret", "client_secret"
+                        )),
+                Arguments.of(AuthorizationType.AWSIAM,
+                        Map.of(
+                                "http.url", "http://localhost:8090",
+                                "http.authorization.type", AuthorizationType.AWSIAM.name,
+                                "aws.iam.service", "service",
+                                "aws.iam.region", "us-east-1"
                         ))
         );
     }
@@ -278,7 +285,7 @@ final class HttpSinkConfigTest {
                 .describedAs("Expected config exception due to unsupported authorization type")
                 .isThrownBy(() -> new HttpSinkConfig(properties))
                 .withMessage("Invalid value unsupported for configuration http.authorization.type: "
-                        + "supported values are: [none, oauth2, static]");
+                        + "supported values are: [none, oauth2, static, aws.iam]");
     }
 
     @Test
@@ -578,5 +585,36 @@ final class HttpSinkConfigTest {
 
         config = new HttpSinkConfig(properties);
         assertThat(config.batchingEnabled()).isTrue();
+    }
+
+    
+    @Test
+    void missingAwsIamRegion() {
+        final Map<String, String> properties = Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "aws.iam",
+                "aws.iam.service", "service"
+        );
+        final String expectedMessage = String.format("Invalid value null for configuration aws.iam.region: "
+                + "Must be present when http.authorization.type = %s", AuthorizationType.AWSIAM.name());
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Cannot use errors.tolerance when batching is enabled")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage(expectedMessage);
+    }
+    
+    @Test
+    void missingAwsIamService() {
+        final Map<String, String> properties = Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "aws.iam",
+                "aws.iam.region", "us-east-1"
+        );
+        final String expectedMessage = String.format("Invalid value null for configuration aws.iam.service: "
+                + "Must be present when http.authorization.type = %s", AuthorizationType.AWSIAM.name());
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Cannot use errors.tolerance when batching is enabled")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage(expectedMessage);
     }
 }

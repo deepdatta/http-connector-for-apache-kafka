@@ -53,6 +53,9 @@ public class HttpSinkConfig extends AbstractConfig {
     private static final String OAUTH2_CLIENT_SCOPE_CONFIG = "oauth2.client.scope";
     private static final String OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG = "oauth2.response.token.property";
 
+    private static final String AWS_IAM_REGION_CONFIG = "aws.iam.region";
+    private static final String AWS_IAM_SERVICE_CONFIG = "aws.iam.service";
+
     private static final String BATCHING_GROUP = "Batching";
     private static final String BATCHING_ENABLED_CONFIG = "batching.enabled";
     private static final String BATCH_MAX_SIZE_CONFIG = "batch.max.size";
@@ -314,6 +317,41 @@ public class HttpSinkConfig extends AbstractConfig {
                 List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
                         OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_CLIENT_SCOPE_CONFIG)
         );
+
+        configDef.define(
+                AWS_IAM_REGION_CONFIG,
+                ConfigDef.Type.STRING,
+                null,
+                new ConfigDef.NonEmptyStringWithoutControlChars() {
+                    @Override
+                    public String toString() {
+                        return "AWS IAM Region";
+                    }
+                },
+                ConfigDef.Importance.LOW,
+                "The name of the AWS IAM Region were the service is hosted.",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                AWS_IAM_REGION_CONFIG
+        );
+        configDef.define(
+                AWS_IAM_SERVICE_CONFIG,
+                ConfigDef.Type.STRING,
+                null,
+                new ConfigDef.NonEmptyStringWithoutControlChars() {
+                    @Override
+                    public String toString() {
+                        return "AWS IAM Service";
+                    }
+                },
+                ConfigDef.Importance.LOW,
+                "The name of the AWS IAM Service receiving the HTTP stream.",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                AWS_IAM_SERVICE_CONFIG
+        );
     }
 
     private static void addBatchingConfigGroup(final ConfigDef configDef) {
@@ -523,6 +561,20 @@ public class HttpSinkConfig extends AbstractConfig {
                                     + " = " + AuthorizationType.OAUTH2);
                 }
                 break;
+            case AWSIAM:
+                if (awsIamRegion() == null) {
+                    throw new ConfigException(
+                        AWS_IAM_REGION_CONFIG, getString(AWS_IAM_REGION_CONFIG),
+                            "Must be present when " + HTTP_AUTHORIZATION_TYPE_CONFIG
+                                    + " = " + AuthorizationType.AWSIAM.name());
+                }
+                if (awsIamService() == null) {
+                    throw new ConfigException(
+                        AWS_IAM_SERVICE_CONFIG, getString(AWS_IAM_SERVICE_CONFIG),
+                            "Must be present when " + HTTP_AUTHORIZATION_TYPE_CONFIG
+                                    + " = " + AuthorizationType.AWSIAM.name());
+                }
+                break;
             case NONE:
                 if (headerAuthorization() != null && !headerAuthorization().isBlank()) {
                     throw new ConfigException(
@@ -649,6 +701,14 @@ public class HttpSinkConfig extends AbstractConfig {
 
     public final String oauth2ResponseTokenProperty() {
         return getString(OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG);
+    }
+
+    public final String awsIamRegion() {
+        return getString(AWS_IAM_REGION_CONFIG);
+    }
+
+    public final String awsIamService() {
+        return getString(AWS_IAM_SERVICE_CONFIG);
     }
 
     public static void main(final String... args) {

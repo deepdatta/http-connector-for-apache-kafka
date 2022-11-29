@@ -24,7 +24,8 @@ import java.util.stream.Collectors;
 public enum AuthorizationType {
     NONE("none"),
     OAUTH2("oauth2"),
-    STATIC("static");
+    STATIC("static"),
+    AWSIAM("aws.iam");
 
     public final String name;
 
@@ -41,6 +42,8 @@ public enum AuthorizationType {
             return OAUTH2;
         } else if (STATIC.name.equalsIgnoreCase(name)) {
             return STATIC;
+        } else if (AWSIAM.name.equalsIgnoreCase(name)) {
+            return AWSIAM;
         } else {
             throw new IllegalArgumentException("Unknown authorization type: " + name);
         }
